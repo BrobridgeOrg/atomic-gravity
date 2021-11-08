@@ -1,0 +1,26 @@
+<script type="text/javascript">
+	RED.nodes.registerType('Gravity Publish', {
+			category: 'function',
+			color: '#335555',
+			defaults: {
+					name: { value: '' }
+				},
+			inputs: 1,
+			outputs: 0,
+			icon: 'file.png',
+			label: function() {
+					return this.name || 'Gravity Publish';
+				}
+		});
+</script>
+
+<script type="text/html" data-template-name="Gravity Publish">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+</script>
+
+<script type="text/html" data-help-name="Gravity Publish">
+	<p>A simple node that publish data to Gravity data node</p>
+</script>
