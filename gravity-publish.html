@@ -1,23 +1,33 @@
 <script type="text/javascript">
 	RED.nodes.registerType('Gravity Publish', {
 			category: 'function',
-			color: '#335555',
+			color: '#EF5350',
 			defaults: {
-					name: { value: '' }
+				name: {
+					value: ""
 				},
+				server: {
+					value: "",
+					type: "gravity-server"
+				},
+			},
 			inputs: 1,
 			outputs: 0,
-			icon: 'file.png',
+			icon: 'gravity-icon-white.png',
 			label: function() {
 					return this.name || 'Gravity Publish';
 				}
 		});
 </script>
 
-<script type="text/html" data-template-name="Gravity Publish">
-    <div class="form-row">
-        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+<script type="text/x-red" data-template-name="Gravity Publish">
+		<div class="form-row">
+        <label for="node-input-name"><i class="fa fa-stack-exchange"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-server"></i> Server</label>
+        <input type="text" id="node-input-server" placeholder="localhost">
     </div>
 </script>
 
