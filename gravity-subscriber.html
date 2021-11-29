@@ -1,23 +1,84 @@
 <script type="text/javascript">
 	RED.nodes.registerType('Gravity Subscriber', {
-			category: 'function',
-			color: '#EF5350',
-			defaults: {
-				name: {
-					value: ""
-				},
-				server: {
-					value: "",
-					type: "gravity-server"
-				},
+		category: 'function',
+		color: '#EF5350',
+		defaults: {
+			name: {
+				value: ""
 			},
-			inputs: 0,
-			outputs: 1,
-			icon: 'gravity-icon-white.png',
-			label: function() {
-					return this.name || 'Gravity Subscriber';
-				}
-		});
+			server: {
+				value: "",
+				type: "gravity-server"
+			},
+			subscriberID: {
+				value: "",
+			},
+			collections: {
+				value: [], 
+			},
+		},
+		inputs: 0,
+		outputs: 1,
+		icon: 'gravity-icon-white.png',
+		label: function() {
+				return this.name || 'Gravity Subscriber';
+		},
+		oneditprepare: function() {
+
+			// Initializing editable list
+            var collectionList = $("#node-input-collections-container").css('min-height','150px').css('min-width','450px').editableList({
+                addItem: function(container, i, data) {
+                    var row = $('<div/>').css({
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        display: 'flex'
+                    }).appendTo(container);
+
+                    var propertyValueCell = $('<div/>').css({'flex-grow':1,'margin-left':'10px'}).appendTo(row);
+                    var propertyValue = $('<input/>',{class:"node-input-collection-value",type:"text",style:"width: 100%"})
+                        .appendTo(propertyValueCell)
+                        .typedInput({
+							type: 'str',
+						})
+						.typedInput('value', data)
+                },
+                removable: true
+            });
+
+            if (this.collections) {
+				this.collections.forEach(function(collection) {
+					collectionList.editableList('addItem', collection);
+				});
+            }
+        },
+        oneditsave: function() {
+
+            var node = this;
+
+			// Getting all of items from editable list
+            var collections = $("#node-input-collections-container").editableList('items');
+
+			// Update array
+            node.collections = [];
+            collections.each(function(i) {
+                var header = $(this);
+                var v = header.find(".node-input-collection-value").typedInput('value');
+
+				node.collections.push(v);
+            });
+        },
+        oneditresize: function(size) {
+            var rows = $('#dialog-form>div:not(.node-input-collections-container-row)');
+            var height = size.height;
+            for (var i = 0; i < rows.length; i++) {
+                height -= $(rows[i]).outerHeight(true);
+            }
+            var editorRow = $("#dialog-form>div.node-input-collections-container-row");
+            height -= (parseInt(editorRow.css("marginTop"))+parseInt(editorRow.css("marginBottom")));
+
+            $('#node-input-collections-container').editableList('height',height);
+        }
+    });
 </script>
 
 <script type="text/x-red" data-template-name="Gravity Subscriber">
@@ -27,7 +88,17 @@
     </div>
     <div class="form-row">
         <label for="node-input-server"><i class="fa fa-server"></i> Server</label>
-        <input type="text" id="node-input-server" placeholder="localhost">
+        <input type="text" id="node-input-server" placeholder="localhost:4222">
+    </div>
+    <div class="form-row">
+        <label for="node-input-subscriber-id"><i class="fa fa-server"></i> ID</label>
+        <input type="text" id="node-input-subscriber-id" placeholder="(Random)">
+    </div>
+	<div class="form-row" style="margin-bottom:0;">
+        <label><i class="fa fa-list"></i> Collections</label>
+    </div>
+    <div class="form-row node-input-collections-container-row">
+        <ol id="node-input-collections-container"></ol>
     </div>
 </script>
 
