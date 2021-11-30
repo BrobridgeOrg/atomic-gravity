@@ -6,6 +6,52 @@ module.exports = function(RED) {
 
 		this.server = RED.nodes.getNode(config.server)
 
+		function setStatus(type) {
+			switch(type) {
+			case 'connected':
+				node.status({
+					fill: 'green',
+					shape: 'dot',
+					text: 'connected'
+				});
+				break;
+			case 'connecting':
+				node.status({
+					fill: 'yellow',
+					shape: 'ring',
+					text: 'connecting'
+				});
+				break;
+			case 'registering':
+				node.status({
+					fill: 'yellow',
+					shape: 'ring',
+					text: 'registering'
+				});
+				break;
+			case 'initializing':
+				node.status({
+					fill: 'yellow',
+					shape: 'ring',
+					text: 'initializing'
+				});
+				break;
+			case 'disconnected':
+				node.status({
+					fill: 'red',
+					shape: 'ring',
+					text: 'disconnected'
+				});
+				break;
+			}
+		}
+
+		function ack() {
+			this.ack();
+		}
+
+		setStatus('disconnected');
+
 		let uuid = require('uuid');
 		let Gravity = require('gravity-sdk');
 
@@ -14,11 +60,15 @@ module.exports = function(RED) {
 			let client = new Gravity.Client();
 
 			try {
+				setStatus('connecting');
+
 				// Connect to gravity
 				await client.connect(node.server.server + ':' + node.server.port);
 			} catch(e) {
-				console.log(e.message);
+				console.log(e);
 			}
+
+			setStatus('registering');
 
 			let subscriber = client.createSubscriber({
 				verbose: true,
@@ -34,8 +84,10 @@ module.exports = function(RED) {
 				// Register subscriber
 				await subscriber.register('transmitter', componentName, subscriberID, subscriberName);
 			} catch(e) {
-				console.log(e.message);
+				console.log(e);
 			}
+
+			setStatus('initializing');
 
 			// Event handler
 			subscriber.on('event', (m) => {
@@ -45,10 +97,11 @@ module.exports = function(RED) {
 						eventName: m.eventName,
 						collection: m.collection,
 						message: m.payload,
-					}
+					},
+					ack: ack.bind(m),
 				});
 
-				m.ack();
+//				m.ack();
 			});
 
 			// Snapshot handler
@@ -58,10 +111,11 @@ module.exports = function(RED) {
 						pipelineID: m.pipelineID,
 						collection: m.collection,
 						message: m.payload,
-					}
+					},
+					ack: ack.bind(m),
 				});
 
-				m.ack();
+//				m.ack();
 			});
 
 			try {
@@ -76,21 +130,22 @@ module.exports = function(RED) {
 					await subscriber.subscribeToCollections(subscription);
 				}
 			} catch(e) {
-				console.log(e.message);
+				console.log(e);
 			}
 
 			try {
 				// Subscribe to pipelines
 				await subscriber.addAllPipelines();
 			} catch(e) {
-				console.log(e.message);
+				console.log(e);
 			}
 
 			// start immediately
 			subscriber.start();
 
+			setStatus('connected');
+
 			node.on('close', () => {
-				console.log('Closing subscriber.........');
 				subscriber.stop();
 				client.disconnect();
 			});

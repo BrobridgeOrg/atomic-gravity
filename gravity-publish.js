@@ -4,6 +4,48 @@ module.exports = function(RED) {
         RED.nodes.createNode(this, config);
         var node = this;
 
+		function setStatus(type) {
+			switch(type) {
+			case 'connected':
+				node.status({
+					fill: 'green',
+					shape: 'dot',
+					text: 'connected'
+				});
+				break;
+			case 'connecting':
+				node.status({
+					fill: 'yellow',
+					shape: 'ring',
+					text: 'connecting'
+				});
+				break;
+			case 'registering':
+				node.status({
+					fill: 'yellow',
+					shape: 'ring',
+					text: 'registering'
+				});
+				break;
+			case 'initializing':
+				node.status({
+					fill: 'yellow',
+					shape: 'ring',
+					text: 'initializing'
+				});
+				break;
+			case 'disconnected':
+				node.status({
+					fill: 'red',
+					shape: 'ring',
+					text: 'disconnected'
+				});
+				break;
+			}
+		}
+
+		setStatus('disconnected');
+
 		// Initializing gravity client
 		let uuid = require('uuid');
 		let Gravity = require('gravity-sdk');
@@ -12,11 +54,15 @@ module.exports = function(RED) {
 		(async () => {
 
 			try {
+				setStatus('connecting');
+
 				// Connect to gravity
 				await client.connect(node.server.server + ':' + node.server.port);
 			} catch(e) {
-				console.log(e.message);
+				console.log(e);
 			}
+
+			setStatus('registering');
 
 			// Creating adapter
 			let adapter = client.createAdapter({
@@ -31,8 +77,10 @@ module.exports = function(RED) {
 				// Register adapter
 				await adapter.register(componentName, adapterID, adapterName);
 			} catch(e) {
-				console.log(e.message);
+				console.log(e);
 			}
+
+			setStatus('connected');
 
 		})();
 
