@@ -13,6 +13,9 @@
 			subscriberID: {
 				value: "",
 			},
+			initialLoad: {
+				value: false,
+			},
 			collections: {
 				value: [], 
 			},
@@ -82,20 +85,24 @@
 </script>
 
 <script type="text/x-red" data-template-name="Gravity Subscriber">
-		<div class="form-row">
-        <label for="node-input-name"><i class="fa fa-stack-exchange"></i> Name</label>
+	<div class="form-row">
+        <label for="node-input-name" style="width: 130px"><i class="fa fa-stack-exchange"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
-        <label for="node-input-server"><i class="fa fa-server"></i> Server</label>
+        <label for="node-input-server" style="width: 130px"><i class="fa fa-server"></i> Server</label>
         <input type="text" id="node-input-server" placeholder="localhost:4222">
     </div>
     <div class="form-row">
-        <label for="node-input-subscriber-id"><i class="fa fa-server"></i> ID</label>
-        <input type="text" id="node-input-subscriber-id" placeholder="(Random)">
+        <label for="node-input-subscriberID" style="width: 130px"><i class="fa fa-stack-exchange"></i> Subscriber ID</label>
+        <input type="text" id="node-input-subscriberID" placeholder="(Random)">
     </div>
-	<div class="form-row" style="margin-bottom:0;">
-        <label><i class="fa fa-list"></i> Collections</label>
+    <div class="form-row">
+        <input type="checkbox" id="node-input-initialLoad" value="InitialLoad" style="display:inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-initialLoad" style="width: auto"> Perform the initial load for the first time</label>
+    </div>
+	<div style="margin-bottom:0;">
+        <label><i class="fa fa-list"></i> Collection subscriptions</label>
     </div>
     <div class="form-row node-input-collections-container-row">
         <ol id="node-input-collections-container"></ol>

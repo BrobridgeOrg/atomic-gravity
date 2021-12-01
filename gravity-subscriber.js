@@ -73,7 +73,7 @@ module.exports = function(RED) {
 			let subscriber = client.createSubscriber({
 				verbose: true,
 				initialLoad: {
-					enabled: true,
+					enabled: config.initialLoad,
 				}
 			});
 
