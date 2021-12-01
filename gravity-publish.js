@@ -84,12 +84,22 @@ module.exports = function(RED) {
 
 		})();
 
-        node.on('input', async (msg) => {
+        node.on('input', async (msg, send, done) => {
 
-			if (!msg.eventName)
+			if (!msg.eventName) {
+
+				if (done) {
+					return done();
+				}
+
 				return;
+			}
 
 			await adapter.publish(msg.eventName, JSON.stringify(msg.payload));
+
+			if (done) {
+				return done();
+			}
         });
     }
 

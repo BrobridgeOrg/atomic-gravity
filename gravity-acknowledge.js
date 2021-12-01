@@ -4,9 +4,13 @@ module.exports = function(RED) {
         RED.nodes.createNode(this, config);
         var node = this;
 
-		node.on('input', function (msg) {
+		node.on('input', function (msg, send, done) {
 			node.log('Acknowledging message');
 			msg.ack();
+
+			if (done) {
+				return done();
+			}
 		})
 	}
 
