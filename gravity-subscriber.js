@@ -64,18 +64,35 @@ module.exports = function(RED) {
 
 				// Connect to gravity
 				await client.connect(node.server.server + ':' + node.server.port);
+
+				client.on('disconnect', () => {
+					setStatus('disconnected');
+				});
+
+				client.on('reconnect', () => {
+					setStatus('connecting');
+				});
 			} catch(e) {
 				console.log(e);
+				setStatus('disconnected');
+				return;
 			}
 
 			setStatus('registering');
 
-			let subscriber = client.createSubscriber({
+			let options = {
 				verbose: true,
 				initialLoad: {
 					enabled: config.initialLoad,
 				}
-			});
+			}
+
+			if (config.enabledAuth) {
+				options.appID = node.credentials.appID || 'anonymous';
+				options.accessKey = node.credentials.accessKey || null;
+			}
+
+			let subscriber = client.createSubscriber(options);
 
 			try {
 				let subscriberID = config.subscriberID || uuid.v1(); 
@@ -85,6 +102,8 @@ module.exports = function(RED) {
 				await subscriber.register('transmitter', componentName, subscriberID, subscriberName);
 			} catch(e) {
 				console.log(e);
+				client.disconnect();
+				return;
 			}
 
 			setStatus('initializing');
@@ -131,6 +150,9 @@ module.exports = function(RED) {
 				}
 			} catch(e) {
 				console.log(e);
+				subscriber.stop();
+				client.disconnect();
+				return;
 			}
 
 			try {
@@ -138,6 +160,9 @@ module.exports = function(RED) {
 				await subscriber.addAllPipelines();
 			} catch(e) {
 				console.log(e);
+				subscriber.stop();
+				client.disconnect();
+				return;
 			}
 
 			// start immediately
@@ -152,5 +177,10 @@ module.exports = function(RED) {
 		})();
     }
 
-    RED.nodes.registerType('Gravity Subscriber', SubscriberNode);
+    RED.nodes.registerType('Gravity Subscriber', SubscriberNode, {
+		credentials: {
+			appID: { type: 'text' },
+			accessKey: { type: 'text' }
+		}
+	});
 }

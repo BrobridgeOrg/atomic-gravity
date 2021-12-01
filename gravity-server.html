@@ -1,17 +1,24 @@
 <script type="text/javascript">
-    RED.nodes.registerType('gravity-server',{
+    RED.nodes.registerType('Gravity Server',{
         category: 'config',
         defaults: {
-            server: {value:"localhost",required:true},
-            port: {value:4222,required:true,validate:RED.validators.number()},
+            server: {
+				value: 'localhost',
+				required: true
+			},
+            port: {
+				value: 4222,
+				required: true,
+				validate: RED.validators.number()
+			},
         },
         label: function() {
-            return this.server+":"+this.port;
+            return this.server + ':' + this.port;
         }
     });
 </script>
 
-<script type="text/x-red" data-template-name="gravity-server">
+<script type="text/x-red" data-template-name="Gravity Server">
     <div class="form-row">
         <label for="node-config-input-server"><i class="icon-bookmark"></i> Server</label>
         <input type="text" id="node-config-input-server">

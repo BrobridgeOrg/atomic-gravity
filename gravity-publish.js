@@ -3,6 +3,7 @@ module.exports = function(RED) {
     function PublishNode(config) {
         RED.nodes.createNode(this, config);
         var node = this;
+		this.server = RED.nodes.getNode(config.server)
 
 		function setStatus(type) {
 			switch(type) {
@@ -58,8 +59,17 @@ module.exports = function(RED) {
 
 				// Connect to gravity
 				await client.connect(node.server.server + ':' + node.server.port);
+
+				client.on('disconnect', () => {
+					setStatus('disconnected');
+				});
+
+				client.on('reconnect', () => {
+					setStatus('connecting');
+				});
 			} catch(e) {
 				console.log(e);
+				return;
 			}
 
 			setStatus('registering');
@@ -78,6 +88,8 @@ module.exports = function(RED) {
 				await adapter.register(componentName, adapterID, adapterName);
 			} catch(e) {
 				console.log(e);
+				client.disconnect();
+				return;
 			}
 
 			setStatus('connected');
@@ -101,7 +113,16 @@ module.exports = function(RED) {
 				return done();
 			}
         });
+
+		node.on('close', () => {
+			client.disconnect();
+		});
     }
 
-    RED.nodes.registerType('Gravity Publish', PublishNode);
+    RED.nodes.registerType('Gravity Publish', PublishNode, {
+		credentials: {
+			appID: { type: 'text' },
+			accessKey: { type: 'text' }
+		}
+	});
 }

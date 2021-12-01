@@ -1,26 +1,46 @@
 <script type="text/javascript">
 	RED.nodes.registerType('Gravity Publish', {
-			category: 'function',
-			color: '#EF5350',
-			defaults: {
-				name: {
-					value: ""
-				},
-				server: {
-					value: "",
-					type: "gravity-server"
-				},
-				adapterID: {
-					value: "",
-				},
+		category: 'function',
+		color: '#EF5350',
+		credentials: {
+			appID: { type: 'text' },
+			accessKey: { type: 'text' }
+		},
+		defaults: {
+			name: {
+				value: ""
 			},
-			inputs: 1,
-			outputs: 0,
-			icon: 'gravity-icon-white.png',
-			label: function() {
-				return this.name || 'Gravity Publish';
+			server: {
+				value: "",
+				type: "Gravity Server"
+			},
+			adapterID: {
+				value: "",
+			},
+		},
+		inputs: 1,
+		outputs: 0,
+		icon: 'gravity-icon-white.png',
+		label: function() {
+			return this.name || 'Gravity Publish';
+		},
+		oneditprepare: function() {
+
+			// Enable Auth
+			function updateAuthOptions() {
+				if ($("#node-input-enabledAuth").is(':checked')) {
+					$("#node-row-auth").show();
+				} else {
+					$("#node-row-auth").hide();
+				}
 			}
-		});
+
+			updateAuthOptions();
+            $("#node-input-enabledAuth").on("click",function() {
+                updateAuthOptions();
+            });
+		}
+	});
 </script>
 
 <script type="text/x-red" data-template-name="Gravity Publish">
@@ -29,15 +49,29 @@
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
+        <label for="node-input-adapter-id" style="width: 130px"><i class="fa fa-stack-exchange"></i> Adapter ID</label>
+        <input type="text" id="node-input-adapter-id" placeholder="(Random)">
+    </div>
+    <div class="form-row">
         <label for="node-input-server"><i class="fa fa-server"></i> Server</label>
         <input type="text" id="node-input-server" placeholder="localhost">
     </div>
     <div class="form-row">
-        <label for="node-input-adapter-id"><i class="fa fa-server"></i> ID</label>
-        <input type="text" id="node-input-adapter-id" placeholder="(Random)">
+        <input type="checkbox" id="node-input-enabledAuth" value="EnabledAuth" style="display:inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-enabledAuth" style="width: auto"> Enable Authentication</label>
+		<div id="node-row-auth" style="margin-left: 20px" class="hide">
+			<div class="form-row">
+				<label for="node-input-appID"><i class="fa fa-id-card"></i> App ID</label>
+				<input type="text" id="node-input-appID" placeholder="App ID">
+			</div>
+			<div class="form-row">
+				<label for="node-input-accessKey"><i class="fa fa-key"></i> Access Key</label>
+				<input type="text" id="node-input-accessKey" placeholder="Access Key">
+			</div>
+		</div>
     </div>
 </script>
 
 <script type="text/html" data-help-name="Gravity Publish">
-	<p>A simple node that publish data to Gravity data node</p>
+	<p>Publish data to Gravity data node</p>
 </script>

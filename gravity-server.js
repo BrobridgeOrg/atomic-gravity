@@ -6,5 +6,5 @@ module.exports = function (RED) {
     this.port = n.port
 
   }
-  RED.nodes.registerType('gravity-server', GravityServerNode)
+  RED.nodes.registerType('Gravity Server', GravityServerNode)
 }
