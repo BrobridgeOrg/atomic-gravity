@@ -4,7 +4,7 @@ module.exports = function(RED) {
         RED.nodes.createNode(this, config);
         var node = this;
 
-		node.on('input', function (msg, send, done) {
+		node.on('input', function(msg, send, done) {
 			node.log('Acknowledging message');
 			msg.ack();
 
@@ -14,6 +14,6 @@ module.exports = function(RED) {
 		})
 	}
 
-    RED.nodes.registerType('Gravity AcknowledgeNode', AcknowledgeNode);
+    RED.nodes.registerType('Gravity Acknowledge', AcknowledgeNode);
 }
 
