@@ -51,6 +51,7 @@ module.exports = function(RED) {
 		let uuid = require('uuid');
 		let Gravity = require('gravity-sdk');
 		let client = new Gravity.Client();
+		let adapter;
 
 		(async () => {
 
@@ -68,14 +69,14 @@ module.exports = function(RED) {
 					setStatus('connecting');
 				});
 			} catch(e) {
-				console.log(e);
+				node.error(e);
 				return;
 			}
 
 			setStatus('registering');
 
 			// Creating adapter
-			let adapter = client.createAdapter({
+			adapter = client.createAdapter({
 				verbose: true,
 			});
 
@@ -87,7 +88,7 @@ module.exports = function(RED) {
 				// Register adapter
 				await adapter.register(componentName, adapterID, adapterName);
 			} catch(e) {
-				console.log(e);
+				node.error(e);
 				client.disconnect();
 				return;
 			}
@@ -99,18 +100,14 @@ module.exports = function(RED) {
         node.on('input', async (msg, send, done) => {
 
 			if (!msg.eventName) {
-
-				if (done) {
-					return done();
-				}
-
-				return;
+				return done();
 			}
 
-			await adapter.publish(msg.eventName, JSON.stringify(msg.payload));
-
-			if (done) {
-				return done();
+			try {
+				await adapter.publish(msg.eventName, JSON.stringify(msg.payload));
+				done();
+			} catch(e) {
+				node.error(e);
 			}
         });
 
