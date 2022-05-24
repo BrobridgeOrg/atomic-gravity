@@ -72,8 +72,6 @@
 
 				products = products.concat(items);
 
-				console.log(products);
-
 				// Update UI
 				$("#node-input-product").empty();
 				products.forEach(function(product) {
@@ -86,6 +84,8 @@
 				});
 
 				$("#node-input-product").val(node.product);
+
+				updateSchema();
 			}
 
 
@@ -111,9 +111,154 @@
 					updateProducts(data)
 				});
 			});
+
+			$("#node-input-product").change(function(data) {
+				updateSchema();
+			});
+
+			function updateSchema() {
+
+				if (!node.products)
+					return;
+				
+				var product = node.products.find(function(product) {
+					return (product.name == node.product);
+				});
+
+				console.log(product.settings.schema);
+
+				function initTable() {
+
+					var $col = $('<div>')
+						.addClass('schema-header')
+					var $sn = $('<div>')
+						.css({
+							width: '30px',
+							display: 'inline-block',
+							padding: '4px',
+							margin: '1px',
+							'border-radius': '5px',
+							'text-align': 'center'
+						})
+						.append('');
+					var $name = $('<div>')
+						.css({
+							width: '50%',
+							display: 'inline-block',
+							padding: '4px',
+							margin: '1px',
+							'border-radius': '5px'
+						})
+						.append('Column');
+					var $type = $('<div>')
+						.css({
+							width: '20%',
+							display: 'inline-block',
+							padding: '4px',
+							margin: '1px',
+							'border-radius': '5px',
+						})
+						.append('Type');
+
+					$col
+						.append($sn)
+						.append($name)
+						.append($type);
+
+					$('#schema').empty().append($col);
+				}
+
+				function createRow(sn, name, type) {
+
+					var $col = $('<div>')
+						.addClass('schema-row')
+					var $sn = $('<div>')
+						.addClass('schema-col')
+						.addClass('schema-sn')
+						.css({
+							width: '30px',
+							'margin-right': '1px',
+							background: 'rgba(0,0,0,.2)',
+							'text-align': 'right'
+						})
+						.append(sn);
+					var $name = $('<div>')
+						.addClass('schema-col')
+						.css({
+							width: '50%',
+							'margin-right': '1px',
+						})
+						.append(name);
+					var $type = $('<div>')
+						.addClass('schema-col')
+						.css({
+							width: '20%',
+							display: 'inline-block',
+							//background: '#006eff',
+						})
+						.append(type);
+
+					$col
+						.append($sn)
+						.append($name)
+						.append($type);
+
+					return $col;
+				}
+
+				initTable();
+
+				let index = 0;
+				for (var fieldName in product.settings.schema) {
+
+					index++;
+
+					var field = product.settings.schema[fieldName];
+
+					var $col = createRow(index, fieldName, field.type);
+
+					$('#schema').append($col);
+				}
+
+			}
+
         }
     });
 </script>
+
+<style>
+.schema-table {
+	border: 1px solid rgba(0,0,0,.5);
+}
+
+.schema-table .schema-header {
+	border-bottom: 2px solid rgba(255,255,255,.5);
+	background: rgba(255,255,255,0);
+}
+
+.schema-table .schema-row {
+	background: rgba(255,255,255,.1);
+	margin-bottom: 1px;
+}
+
+.schema-table .schema-row:nth-child(2n) {
+	background: rgba(255,255,255,.05);
+}
+
+.schema-table .schema-row .schema-col {
+	display: inline-block;
+	padding: 4px;
+}
+
+.schema-table .schema-row .schema-col:nth-child(2) {
+	border-right: 1px solid rgba(0,0,0,.2);
+}
+
+.schema-table .schema-row .schema-sn {
+	border-right: 2px solid rgba(0,0,0,.1);
+}
+
+</style>
 
 <script type="text/x-red" data-template-name="Gravity Subscriber">
 	<div class="form-row">
@@ -135,21 +280,24 @@
 		</div>
     </div>
     <div class="form-row">
-        <label for="node-input-domain" style="width: 130px"><i class="fa fa-database"></i> Data Domain</label>
-        <input type="text" id="node-input-domain" placeholder="default">
-    </div>
-    <div class="form-row">
-        <label for="node-input-product" style="width: 130px"><i class="fa fa-table"></i> Product</label>
-		<!--input type="text" id="node-input-product"-->
-		<select id="node-input-product" style='width:70%'></select>
-    </div>
-    <div class="form-row">
         <input type="checkbox" id="node-input-initialLoad" value="InitialLoad" style="display:inline-block; width: auto; vertical-align: top;">
         <label for="node-input-initialLoad" style="width: auto"> Perform the initial load for the first time</label>
     </div>
     <div class="form-row">
         <input type="checkbox" id="node-input-manuallyAck" value="InitialLoad" style="display:inline-block; width: auto; vertical-align: top;">
         <label for="node-input-manuallyAck" style="width: auto"> Manually ACK</label>
+    </div>
+    <div class="form-row">
+        <label for="node-input-domain" style="width: 130px"><i class="fa fa-database"></i> Data Domain</label>
+        <input type="text" id="node-input-domain" placeholder="default">
+    </div>
+    <div class="form-row">
+        <label for="node-input-product" style="width: 130px"><i class="fa fa-table"></i> Product</label>
+		<select id="node-input-product" style='width:70%'></select>
+    </div>
+    <div class="form-row">
+        <label style="width: 100%"><i class="fa fa-code"></i> Schema</label>
+		<div id="schema" class="schema-table"></div>
     </div>
 </script>
 
