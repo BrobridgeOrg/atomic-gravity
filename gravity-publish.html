@@ -3,8 +3,7 @@
 		category: 'function',
 		color: '#EF5350',
 		credentials: {
-			appID: { type: 'text' },
-			accessKey: { type: 'text' }
+			accessToken: { type: 'text' }
 		},
 		defaults: {
 			name: {
@@ -13,9 +12,6 @@
 			server: {
 				value: "",
 				type: "Gravity Server"
-			},
-			adapterID: {
-				value: "",
 			},
 		},
 		inputs: 1,
@@ -49,24 +45,16 @@
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
-        <label for="node-input-adapter-id" style="width: 130px"><i class="fa fa-stack-exchange"></i> Adapter ID</label>
-        <input type="text" id="node-input-adapter-id" placeholder="(Random)">
-    </div>
-    <div class="form-row">
-        <label for="node-input-server"><i class="fa fa-server"></i> Server</label>
-        <input type="text" id="node-input-server" placeholder="localhost">
+        <label for="node-input-server" style="width: 130px"><i class="fa fa-server"></i> Server</label>
+        <input type="text" id="node-input-server" placeholder="localhost:4222">
     </div>
     <div class="form-row">
         <input type="checkbox" id="node-input-enabledAuth" value="EnabledAuth" style="display:inline-block; width: auto; vertical-align: top;">
         <label for="node-input-enabledAuth" style="width: auto"> Enable Authentication</label>
 		<div id="node-row-auth" style="margin-left: 20px" class="hide">
 			<div class="form-row">
-				<label for="node-input-appID"><i class="fa fa-id-card"></i> App ID</label>
-				<input type="text" id="node-input-appID" placeholder="App ID">
-			</div>
-			<div class="form-row">
-				<label for="node-input-accessKey"><i class="fa fa-key"></i> Access Key</label>
-				<input type="text" id="node-input-accessKey" placeholder="Access Key">
+				<label for="node-input-accessToken"><i class="fa fa-key"></i> Token</label>
+				<input type="text" id="node-input-accessToken" placeholder="Access Token">
 			</div>
 		</div>
     </div>

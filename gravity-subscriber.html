@@ -3,8 +3,7 @@
 		category: 'function',
 		color: '#EF5350',
 		credentials: {
-			appID: { type: 'text' },
-			accessKey: { type: 'text' }
+			accessToken: { type: 'text' }
 		},
 		defaults: {
 			name: {
@@ -14,17 +13,17 @@
 				value: "",
 				type: "Gravity Server"
 			},
-			subscriberID: {
-				value: "",
+			domain: {
+				value: "default",
 			},
-			enabledAuth: {
-				value: false,
+			product: {
+				value: "", 
 			},
 			initialLoad: {
 				value: false,
 			},
-			collections: {
-				value: [], 
+			manuallyAck: {
+				value: false,
 			},
 		},
 		inputs: 0,
@@ -34,6 +33,8 @@
 				return this.name || 'Gravity Subscriber';
 		},
 		oneditprepare: function() {
+
+			var node = this;
 
 			// Enable Auth
 			function updateAuthOptions() {
@@ -49,58 +50,67 @@
                 updateAuthOptions();
             });
 
-			// Initializing editable list
-            var collectionList = $("#node-input-collections-container").css('min-height','150px').css('min-width','450px').editableList({
-                addItem: function(container, i, data) {
-                    var row = $('<div/>').css({
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
-                        display: 'flex'
-                    }).appendTo(container);
+			// Product selector
+			function updateProducts(values) {
 
-                    var propertyValueCell = $('<div/>').css({'flex-grow':1,'margin-left':'10px'}).appendTo(row);
-                    var propertyValue = $('<input/>',{class:"node-input-collection-value",type:"text",style:"width: 100%"})
-                        .appendTo(propertyValueCell)
-                        .typedInput({
-							type: 'str',
-						})
-						.typedInput('value', data)
-                },
-                removable: true
-            });
+				node.products = values;
 
-            if (this.collections) {
-				this.collections.forEach(function(collection) {
-					collectionList.editableList('addItem', collection);
+				var products = [
+					{
+						value: '',
+						label: '-- n/a --'
+					}
+				];
+
+				// Append items
+				var items = values.map(function(product) {
+					return {
+						value: product.name,
+						label: product.name + ' - ' + product.settings.desc,
+					};
 				});
-            }
-        },
-        oneditsave: function() {
 
-            var node = this;
+				products = products.concat(items);
 
-			// Getting all of items from editable list
-            var collections = $("#node-input-collections-container").editableList('items');
+				console.log(products);
 
-			// Update array
-            node.collections = [];
-            collections.each(function(i) {
-                var header = $(this);
-                var v = header.find(".node-input-collection-value").typedInput('value');
+				// Update UI
+				$("#node-input-product").empty();
+				products.forEach(function(product) {
+					$("#node-input-product")
+						.append(
+							$("<option></option>")
+								.attr('value', product.value)
+								.text(product.label)
+						);
+				});
 
-				node.collections.push(v);
-            });
-        },
-        oneditresize: function(size) {
-            var rows = $('#dialog-form>div:not(.node-input-collections-container-row)');
-            var height = size.height;
-            for (var i = 0; i < rows.length; i++) {
-                height -= $(rows[i]).outerHeight(true);
-            }
-            var editorRow = $("#dialog-form>div.node-input-collections-container-row");
-            height -= (parseInt(editorRow.css("marginTop"))+parseInt(editorRow.css("marginBottom")));
+				$("#node-input-product").val(node.product);
+			}
 
-            $('#node-input-collections-container').editableList('height',height);
+
+			// When server settings changed
+			$('#node-input-server').change(function(data) {
+
+				// Getting server config node
+				var configID = this.value;
+				var server = RED.nodes.node(configID);
+				if (!server)
+					return;
+
+				$("#node-input-product")
+					.empty()
+					.append(
+						$("<option></option>")
+							.attr('value', '')
+							.text('Loading from the server...')
+					);
+
+				// Loading available products on specific server
+				server._def.getProducts(server, node.domain, function(data) {
+					updateProducts(data)
+				});
+			});
         }
     });
 </script>
@@ -111,10 +121,6 @@
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
-        <label for="node-input-subscriberID" style="width: 130px"><i class="fa fa-stack-exchange"></i> Subscriber ID</label>
-        <input type="text" id="node-input-subscriberID" placeholder="(Random)">
-    </div>
-    <div class="form-row">
         <label for="node-input-server" style="width: 130px"><i class="fa fa-server"></i> Server</label>
         <input type="text" id="node-input-server" placeholder="localhost:4222">
     </div>
@@ -123,24 +129,27 @@
         <label for="node-input-enabledAuth" style="width: auto"> Enable Authentication</label>
 		<div id="node-row-auth" style="margin-left: 20px" class="hide">
 			<div class="form-row">
-				<label for="node-input-appID"><i class="fa fa-id-card"></i> App ID</label>
-				<input type="text" id="node-input-appID" placeholder="App ID">
-			</div>
-			<div class="form-row">
-				<label for="node-input-accessKey"><i class="fa fa-key"></i> Access Key</label>
-				<input type="text" id="node-input-accessKey" placeholder="Access Key">
+				<label for="node-input-accessToken"><i class="fa fa-key"></i> Token</label>
+				<input type="text" id="node-input-accessToken" placeholder="Access Token">
 			</div>
 		</div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-domain" style="width: 130px"><i class="fa fa-database"></i> Data Domain</label>
+        <input type="text" id="node-input-domain" placeholder="default">
+    </div>
+    <div class="form-row">
+        <label for="node-input-product" style="width: 130px"><i class="fa fa-table"></i> Product</label>
+		<!--input type="text" id="node-input-product"-->
+		<select id="node-input-product" style='width:70%'></select>
     </div>
     <div class="form-row">
         <input type="checkbox" id="node-input-initialLoad" value="InitialLoad" style="display:inline-block; width: auto; vertical-align: top;">
         <label for="node-input-initialLoad" style="width: auto"> Perform the initial load for the first time</label>
     </div>
-	<div style="margin-bottom:0;">
-        <label><i class="fa fa-list"></i> Collection subscriptions</label>
-    </div>
-    <div class="form-row node-input-collections-container-row">
-        <ol id="node-input-collections-container"></ol>
+    <div class="form-row">
+        <input type="checkbox" id="node-input-manuallyAck" value="InitialLoad" style="display:inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-manuallyAck" style="width: auto"> Manually ACK</label>
     </div>
 </script>
 

@@ -21,20 +21,6 @@ module.exports = function(RED) {
 					text: 'connecting'
 				});
 				break;
-			case 'registering':
-				node.status({
-					fill: 'yellow',
-					shape: 'ring',
-					text: 'registering'
-				});
-				break;
-			case 'initializing':
-				node.status({
-					fill: 'yellow',
-					shape: 'ring',
-					text: 'initializing'
-				});
-				break;
 			case 'disconnected':
 				node.status({
 					fill: 'red',
@@ -50,16 +36,20 @@ module.exports = function(RED) {
 		// Initializing gravity client
 		let uuid = require('uuid');
 		let Gravity = require('gravity-sdk');
-		let client = new Gravity.Client();
-		let adapter;
 
 		(async () => {
+
+			let client = new Gravity.Client({
+				servers: node.server.server + ':' + node.server.port,
+				domain: config.domain || 'default',
+			});
+			node.gravityClient = client;
 
 			try {
 				setStatus('connecting');
 
 				// Connect to gravity
-				await client.connect(node.server.server + ':' + node.server.port);
+				await client.connect();
 
 				client.on('disconnect', () => {
 					setStatus('disconnected');
@@ -70,26 +60,6 @@ module.exports = function(RED) {
 				});
 			} catch(e) {
 				node.error(e);
-				return;
-			}
-
-			setStatus('registering');
-
-			// Creating adapter
-			adapter = client.createAdapter({
-				verbose: true,
-			});
-
-			try {
-				let adapterID = config.adapterID || uuid.v1(); 
-				let componentName = 'atomic-adapter.' + adapterID; 
-				let adapterName = config.name || 'Atomic Adapter'; 
-
-				// Register adapter
-				await adapter.register(componentName, adapterID, adapterName);
-			} catch(e) {
-				node.error(e);
-				client.disconnect();
 				return;
 			}
 
@@ -104,7 +74,7 @@ module.exports = function(RED) {
 			}
 
 			try {
-				await adapter.publish(msg.eventName, JSON.stringify(msg.payload));
+				await node.gravityClient.publish(msg.eventName, JSON.stringify(msg.payload));
 				done();
 			} catch(e) {
 				node.error(e);
@@ -112,7 +82,7 @@ module.exports = function(RED) {
         });
 
 		node.on('close', () => {
-			client.disconnect();
+			node.gravityClient.disconnect();
 		});
     }
 
