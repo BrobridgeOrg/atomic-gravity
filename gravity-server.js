@@ -3,8 +3,7 @@ module.exports = function (RED) {
 
 	var prefix = '/nodes/atomic-gravity/apis';
 
-	//RED.httpAdmin.get(prefix + '/products', RED.httpAdmin.needsPermission("flows.write"), function(req, res) {
-	RED.httpAdmin.get(prefix + '/products', function(req, res) {
+	RED.httpAdmin.get(prefix + '/products', RED.auth.needsPermission('flows.write'), function(req, res) {
 
 		let Gravity = require('gravity-sdk');
 		let client = new Gravity.Client({
