@@ -39,9 +39,15 @@ module.exports = function(RED) {
 
 		(async () => {
 
+			if (!node.server) {
+				setStatus('disconnected');
+				return;
+			}
+
 			let client = new Gravity.Client({
 				servers: node.server.server + ':' + node.server.port,
 				domain: config.domain || 'default',
+				token: config.accessToken,
 			});
 			node.gravityClient = client;
 

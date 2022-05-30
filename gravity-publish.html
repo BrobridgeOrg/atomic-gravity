@@ -21,43 +21,23 @@
 			return this.name || 'Gravity Publish';
 		},
 		oneditprepare: function() {
-
-			// Enable Auth
-			function updateAuthOptions() {
-				if ($("#node-input-enabledAuth").is(':checked')) {
-					$("#node-row-auth").show();
-				} else {
-					$("#node-row-auth").hide();
-				}
-			}
-
-			updateAuthOptions();
-            $("#node-input-enabledAuth").on("click",function() {
-                updateAuthOptions();
-            });
 		}
 	});
 </script>
 
 <script type="text/x-red" data-template-name="Gravity Publish">
 		<div class="form-row">
-        <label for="node-input-name"><i class="fa fa-stack-exchange"></i> Name</label>
+        <label for="node-input-name" style="width: 130px"><i class="fa fa-stack-exchange"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
         <label for="node-input-server" style="width: 130px"><i class="fa fa-server"></i> Server</label>
         <input type="text" id="node-input-server" placeholder="localhost:4222">
     </div>
-    <div class="form-row">
-        <input type="checkbox" id="node-input-enabledAuth" value="EnabledAuth" style="display:inline-block; width: auto; vertical-align: top;">
-        <label for="node-input-enabledAuth" style="width: auto"> Enable Authentication</label>
-		<div id="node-row-auth" style="margin-left: 20px" class="hide">
-			<div class="form-row">
-				<label for="node-input-accessToken"><i class="fa fa-key"></i> Token</label>
-				<input type="text" id="node-input-accessToken" placeholder="Access Token">
-			</div>
-		</div>
-    </div>
+	<div class="form-row">
+		<label for="node-input-accessToken" style="width: 130px"><i class="fa fa-key"></i> Token</label>
+		<input type="text" id="node-input-accessToken" placeholder="(empty)">
+	</div>
 </script>
 
 <script type="text/html" data-help-name="Gravity Publish">
