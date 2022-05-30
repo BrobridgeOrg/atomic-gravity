@@ -95,7 +95,7 @@
 				$('#schema').empty();
 
 				// Loading available products on specific server
-				server._def.getProducts(server, node.domain, function(data) {
+				server._def.getProducts(server, node.domain, node.accessToken, function(data) {
 					updateProducts(data)
 				});
 			});

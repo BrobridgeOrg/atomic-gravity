@@ -15,12 +15,13 @@
         label: function() {
             return this.server + ':' + this.port;
         },
-		getProducts: function(node, domain, cb) {
+		getProducts: function(node, domain, token, cb) {
 
 			var params = new URLSearchParams({
 				server: node.server,
 				port: node.port,
 				domain: domain || 'default',
+				token: token,
 			});
 
 			$.ajax({
