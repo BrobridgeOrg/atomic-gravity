@@ -9,7 +9,7 @@ module.exports = function (RED) {
 		let client = new Gravity.Client({
 			servers: req.query.server + ':' + req.query.port,
 			domain: req.query.domain || 'default',
-			token: req.query.token,
+			token: req.query.token || '',
 		});
 
 		(async () => {
