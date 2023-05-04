@@ -1,9 +1,11 @@
 module.exports = function(RED) {
 
     function SubscriberNode(config) {
+
         RED.nodes.createNode(this, config);
         var node = this;
 
+		// Getting server information from gravity server node
 		this.server = RED.nodes.getNode(config.server)
 
 		function setStatus(type) {
@@ -43,11 +45,19 @@ module.exports = function(RED) {
 					text: 'disconnected'
 				});
 				break;
+			case 'receiving':
+				node.status({
+					fill: 'blue',
+					shape: 'ring',
+					text: 'receiving'
+				});
+				break;
 			}
 		}
 
 		function ack() {
 			this.ack();
+			setStatus('connected');
 		}
 
 		setStatus('disconnected');
@@ -57,13 +67,23 @@ module.exports = function(RED) {
 
 		(async () => {
 
-			let client = new Gravity.Client();
+			if (!node.server) {
+				setStatus('disconnected');
+				return;
+			}
+
+			let client = new Gravity.Client({
+				servers: node.server.server + ':' + node.server.port,
+				domain: config.domain || 'default',
+				token: config.accessToken,
+			});
+			node.gravityClient = client;
 
 			try {
 				setStatus('connecting');
 
 				// Connect to gravity
-				await client.connect(node.server.server + ':' + node.server.port);
+				await client.connect();
 
 				client.on('disconnect', () => {
 					setStatus('disconnected');
@@ -78,100 +98,45 @@ module.exports = function(RED) {
 				return;
 			}
 
-			setStatus('registering');
-
-			let options = {
-				verbose: true,
-				initialLoad: {
-					enabled: config.initialLoad,
-				}
-			}
-
-			if (config.enabledAuth) {
-				options.appID = node.credentials.appID || 'anonymous';
-				options.accessKey = node.credentials.accessKey || null;
-			}
-
-			let subscriber = client.createSubscriber(options);
-
-			try {
-				let subscriberID = config.subscriberID || uuid.v1(); 
-				let componentName = 'atomic-subscriber.' + subscriberID; 
-				let subscriberName = config.name || 'Atomic Subscriber'; 
-				// Register subscriber
-				await subscriber.register('transmitter', componentName, subscriberID, subscriberName);
-			} catch(e) {
-				console.log(e);
-				client.disconnect();
+			// Not specify product
+			if (!config.product || config.product.length == 0) {
+				setStatus('connected');
 				return;
 			}
+
+			// Subscribe to product
+			let product = await client.getProduct(config.product);
+			let sub = await product.subscribe([], { seq: 110 });
 
 			setStatus('initializing');
 
-			// Event handler
-			subscriber.on('event', (m) => {
+			sub.on('event', (m) => {
+
+				setStatus('receiving');
+
 				node.send({
 					payload: {
-						pipelineID: m.pipelineID,
-						eventName: m.eventName,
-						collection: m.collection,
-						message: m.payload,
+						seq: m.seq,
+						eventName: m.data.eventName,
+						table: m.data.table,
+						primaryKeys: m.data.primaryKeys,
+						primaryKey: m.data.primaryKey,
+						time: m.time,
+						timeNano: m.timeNano,
+						record: m.data.record,
 					},
 					ack: ack.bind(m),
 				});
 
-//				m.ack();
+				// Sent acknoledgement automatically
+				if (!config.manuallyAck)
+					ack.bind(m)();
 			});
-
-			// Snapshot handler
-			subscriber.on('snapshot', (m) => {
-				node.send({
-					payload: {
-						pipelineID: m.pipelineID,
-						collection: m.collection,
-						message: m.payload,
-					},
-					ack: ack.bind(m),
-				});
-
-//				m.ack();
-			});
-
-			try {
-				if (config.collections) {
-
-					let subscription = {};
-					config.collections.forEach(function(collection) {
-						subscription[collection] = [];
-					});
-
-					// Subscribe to collections
-					await subscriber.subscribeToCollections(subscription);
-				}
-			} catch(e) {
-				console.log(e);
-				subscriber.stop();
-				client.disconnect();
-				return;
-			}
-
-			try {
-				// Subscribe to pipelines
-				await subscriber.addAllPipelines();
-			} catch(e) {
-				console.log(e);
-				subscriber.stop();
-				client.disconnect();
-				return;
-			}
-
-			// start immediately
-			subscriber.start();
 
 			setStatus('connected');
 
-			node.on('close', () => {
-				subscriber.stop();
+			node.on('close', async () => {
+				await sub.unsubscribe();
 				client.disconnect();
 			});
 		})();
