@@ -22,7 +22,7 @@ module.exports = function (RED) {
 				// Getting products
 				let products = await client.getProducts();
 
-				client.disconnect();
+				await client.disconnect();
 
 				items = products.map(function(product) {
 					return {
@@ -31,7 +31,7 @@ module.exports = function (RED) {
 					}
 				});
 			} catch(e) {
-				console.error(e);
+				//console.error(e);
 			}
 
 			res.json({

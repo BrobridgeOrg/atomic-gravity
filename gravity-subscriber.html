@@ -22,6 +22,12 @@
 			initialLoad: {
 				value: false,
 			},
+			delivery: {
+				value: "new",
+			},
+			startseq: {
+				value: 1,
+			},
 			manuallyAck: {
 				value: false,
 			},
@@ -35,6 +41,22 @@
 		oneditprepare: function() {
 
 			var node = this;
+
+			// Delivery
+			function updateDeliveryOptions() {
+				switch($('#node-input-delivery').val()) {
+				case 'startSeq':
+					$('#node-row-startseq').show();
+					break;
+				default:
+					$('#node-row-startseq').hide();
+				}
+			}
+
+			updateDeliveryOptions();
+            $("#node-input-delivery").on("change", function() {
+				updateDeliveryOptions();
+            });
 
 			// Product selector
 			function updateProducts(values) {
@@ -113,7 +135,10 @@
 					return (product.name == node.product);
 				});
 
-				console.log(product.settings.schema);
+				// Not found
+				if (!product) {
+					return;
+				}
 
 				function initTable() {
 
@@ -268,6 +293,26 @@
     <div class="form-row">
         <input type="checkbox" id="node-input-manuallyAck" value="InitialLoad" style="display:inline-block; width: auto; vertical-align: top;">
         <label for="node-input-manuallyAck" style="width: auto"> Manually ACK</label>
+    </div>
+	<div class="form-row">
+        <label for="node-input-delivery" style="width: 130px"><i class="fa fa-play"></i> Delivery Options</label>
+		<select id="node-input-delivery" style='width:70%'>
+			<option value="new">New</option>
+			<option value="all">All</option>
+			<option value="startSeq">Start Sequence</option>
+		</select>
+		<div id="node-row-startseq" style="margin-left: 30px; margin-top: 10px;" class="hide">
+			<div class="form-row">
+				<label for="node-input-startseq"><i class="fa fa-map-marker"></i> Sequence</label>
+				<input type="text" id="node-input-startseq" style="width:100px" placeholder="0">
+			</div>
+		</div>
+		<div id="node-row-starttime" style="margin-left: 30px; margin-top: 10px;" class="hide">
+			<div class="form-row">
+				<label for="node-input-starttime"><i class="fa fa-history"></i> Timestamp</label>
+				<input type="text" id="node-input-starttime" style="width:100px" placeholder="0">
+			</div>
+		</div>
     </div>
 	<hr />
     <div class="form-row">
