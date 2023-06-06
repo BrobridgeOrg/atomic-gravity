@@ -2,6 +2,8 @@ module.exports = function(RED) {
 
     function SubscriberNode(config) {
 
+		const util = require('util');
+
         RED.nodes.createNode(this, config);
         var node = this;
 
@@ -65,38 +67,7 @@ module.exports = function(RED) {
 		let uuid = require('uuid');
 		let Gravity = require('gravity-sdk');
 
-		(async () => {
-
-			if (!node.server) {
-				setStatus('disconnected');
-				return;
-			}
-
-			let client = new Gravity.Client({
-				servers: node.server.server + ':' + node.server.port,
-				domain: config.domain || 'default',
-				token: config.accessToken,
-			});
-			node.gravityClient = client;
-
-			try {
-				setStatus('connecting');
-
-				// Connect to gravity
-				await client.connect();
-
-				client.on('disconnect', () => {
-					setStatus('disconnected');
-				});
-
-				client.on('reconnect', () => {
-					setStatus('connecting');
-				});
-			} catch(e) {
-				console.log(e);
-				setStatus('disconnected');
-				return;
-			}
+		async function initSubscriber(client) {
 
 			// Not specify product
 			if (!config.product || config.product.length == 0) {
@@ -104,11 +75,18 @@ module.exports = function(RED) {
 				return;
 			}
 
+			setStatus('initializing');
+
 			// Subscribe to product
 			let product = await client.getProduct(config.product);
-			let sub = await product.subscribe([], { seq: 110 });
+			let subOpts = {
+				seq: config.startSeq || 0,
+				delivery: config.delivery || 'new'
+			};
 
-			setStatus('initializing');
+			node.log(util.format('Initializing subscriber (domain=%s, product=%s, delivery=%s)', client.opts.domain, product.name, subOpts.delivery));
+
+			let sub = await product.subscribe([], subOpts);
 
 			sub.on('event', (m) => {
 
@@ -133,19 +111,62 @@ module.exports = function(RED) {
 					ack.bind(m)();
 			});
 
-			setStatus('connected');
+			node.log(util.format('Subscriber is ready (domain=%s, product=%s, delivery=%s)', client.opts.domain, product.name, subOpts.delivery));
 
 			node.on('close', async () => {
+				node.log(util.format('Closing subscriber (domain=%s, product=%s, delivery=%s)', client.opts.domain, product.name, subOpts.delivery));
 				await sub.unsubscribe();
-				client.disconnect();
 			});
-		})();
+
+			setStatus('connected');
+		}
+
+		if (!node.server) {
+			setStatus('disconnected');
+			return;
+		}
+
+		let client = new Gravity.Client({
+			servers: node.server.server + ':' + node.server.port,
+			domain: config.domain || 'default',
+			token: config.accessToken,
+			waitOnFirstConnect: true
+		});
+		node.gravityClient = client;
+
+		// Initializing event handlers
+		client.on('disconnect', () => {
+			setStatus('disconnected');
+		});
+
+		client.on('reconnect', () => {
+			node.log('Reconnecting to Gravity... ' + client.opts.servers);
+			setStatus('connecting');
+		});
+
+		client.on('connected', () => {
+
+			setStatus('connected');
+
+			initSubscriber(client);
+		});
+
+		// Connect to gravity
+		setStatus('connecting');
+		node.log('Connecting to Gravity... ' + client.opts.servers);
+		client.connect();
+
+		node.on('close', async () => {
+			node.log('Close current connection');
+			setStatus('disconnected');
+			client.disconnect();
+		});
     }
 
     RED.nodes.registerType('Gravity Subscriber', SubscriberNode, {
 		credentials: {
 			appID: { type: 'text' },
-			accessKey: { type: 'text' }
+			accessToken: { type: 'text' }
 		}
 	});
 }
