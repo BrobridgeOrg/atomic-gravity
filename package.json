@@ -21,7 +21,7 @@
     }
   },
   "dependencies": {
-    "gravity-sdk": "^1.0.7",
+    "gravity-sdk": "^1.0.8",
     "uuid": "^8.3.2"
   }
 }

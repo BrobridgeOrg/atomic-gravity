@@ -80,11 +80,15 @@ module.exports = function(RED) {
 			// Subscribe to product
 			let product = await client.getProduct(config.product);
 			let subOpts = {
-				seq: config.startSeq || 0,
+				seq: Number(config.startseq) || 1,
 				delivery: config.delivery || 'new'
 			};
 
-			node.log(util.format('Initializing subscriber (domain=%s, product=%s, delivery=%s)', client.opts.domain, product.name, subOpts.delivery));
+			if (config.delivery == 'startSeq') {
+				node.log(util.format('Initializing subscriber (domain=%s, product=%s, delivery=%s, seq=%d)', client.opts.domain, product.name, subOpts.delivery, subOpts.seq));
+			} else {
+				node.log(util.format('Initializing subscriber (domain=%s, product=%s, delivery=%s)', client.opts.domain, product.name, subOpts.delivery));
+			}
 
 			let sub = await product.subscribe([], subOpts);
 
