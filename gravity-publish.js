@@ -47,7 +47,7 @@ module.exports = function(RED) {
 			let client = new Gravity.Client({
 				servers: node.server.server + ':' + node.server.port,
 				domain: config.domain || 'default',
-				token: config.accessToken,
+				token: node.credentials.accessToken,
 			});
 			node.gravityClient = client;
 
@@ -95,7 +95,7 @@ module.exports = function(RED) {
     RED.nodes.registerType('Gravity Publish', PublishNode, {
 		credentials: {
 			appID: { type: 'text' },
-			accessKey: { type: 'text' }
+			accessToken: { type: 'text' }
 		}
 	});
 }

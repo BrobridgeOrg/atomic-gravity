@@ -133,7 +133,7 @@ module.exports = function(RED) {
 		let client = new Gravity.Client({
 			servers: node.server.server + ':' + node.server.port,
 			domain: config.domain || 'default',
-			token: config.accessToken,
+			token: node.credentials.accessToken,
 			waitOnFirstConnect: true
 		});
 		node.gravityClient = client;
