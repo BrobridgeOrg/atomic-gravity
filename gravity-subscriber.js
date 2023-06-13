@@ -54,6 +54,13 @@ module.exports = function(RED) {
 					text: 'receiving'
 				});
 				break;
+			case 'productNotFound':
+				node.status({
+					fill: 'red',
+					shape: 'ring',
+					text: 'ERR: product not found'
+				});
+				break;
 			}
 		}
 
@@ -152,7 +159,10 @@ module.exports = function(RED) {
 
 			setStatus('connected');
 
-			initSubscriber(client);
+			initSubscriber(client).catch((e) => {
+				node.error(e);
+				setStatus('productNotFound');
+			});
 		});
 
 		// Connect to gravity
