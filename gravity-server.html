@@ -17,6 +17,9 @@
         },
 		getProducts: function(node, domain, token, cb) {
 
+			// Getting token information from local storage
+			let tokenInfo = JSON.parse(localStorage.getItem('auth-tokens'));
+
 			var params = new URLSearchParams({
 				server: node.server,
 				port: node.port,
@@ -29,6 +32,9 @@
 				dataType: 'json',
 				cache: false,
 				url: '/nodes/atomic-gravity/apis/products?' + params.toString(),
+				headers: {
+					Authorization: 'Bearer ' + tokenInfo.access_token,
+				},
 				success: function(data) {
 					cb(data.products);
 				}
