@@ -44,10 +44,15 @@ module.exports = function(RED) {
 				return;
 			}
 
+			let accessToken = '';
+			if (node.credentials) {
+				accessToken = node.credentials.accessToken || '';
+			}
+
 			let client = new Gravity.Client({
 				servers: node.server.server + ':' + node.server.port,
 				domain: config.domain || 'default',
-				token: node.credentials.accessToken,
+				token: accessToken,
 			});
 			node.gravityClient = client;
 
