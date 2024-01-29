@@ -5,7 +5,7 @@ module.exports = function(RED) {
         var node = this;
 
 		node.on('input', function(msg, send, done) {
-			node.log('Acknowledging message');
+			//node.log('Acknowledging message');
 			msg.ack();
 
 			if (done) {
