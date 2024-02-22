@@ -84,8 +84,14 @@ module.exports = function(RED) {
 				return done();
 			}
 
+			// set msgID
+                        let opts = {}
+                        if (msg.natsMsgId) {
+                                opts.msgID = msg.natsMsgId;
+                        }
+
 			try {
-				await node.gravityClient.publish(msg.eventName, JSON.stringify(msg.payload));
+				await node.gravityClient.publish(msg.eventName, JSON.stringify(msg.payload), opts);
 				done();
 			} catch(e) {
 				node.error(e);
