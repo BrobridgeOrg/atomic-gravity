@@ -1,6 +1,6 @@
 {
   "name": "atomic-gravity",
-  "version": "2.0.15",
+  "version": "2.0.16",
   "description": "Gravity module for Brobridge Atomic",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
