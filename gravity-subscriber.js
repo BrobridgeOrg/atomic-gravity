@@ -114,6 +114,7 @@ module.exports = function(RED) {
 						timeNano: m.timeNano,
 						record: m.data.record,
 					},
+					natsMsgId: m.seq.toString(),
 					ack: ack.bind(m),
 				});
 
