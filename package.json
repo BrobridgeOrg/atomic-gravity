@@ -1,6 +1,6 @@
 {
   "name": "atomic-gravity",
-  "version": "2.0.16",
+  "version": "2.0.17",
   "description": "Gravity module for Brobridge Atomic",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,7 +21,7 @@
     }
   },
   "dependencies": {
-    "gravity-sdk": "^1.0.17",
+    "gravity-sdk": "^1.0.19",
     "uuid": "^8.3.2"
   }
 }
