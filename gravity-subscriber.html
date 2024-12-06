@@ -17,7 +17,7 @@
 				value: "default",
 			},
 			product: {
-				value: "", 
+				value: "",
 			},
 			initialLoad: {
 				value: false,
@@ -25,12 +25,21 @@
 			delivery: {
 				value: "new",
 			},
+			batchMode:{
+				value: false,
+			},
 			startseq: {
 				value: 1,
 			},
 			manuallyAck: {
 				value: false,
 			},
+			timeout:{
+				value: 1,
+			},
+			batchSize:{
+				value: 1,
+			}
 		},
 		inputs: 0,
 		outputs: 1,
@@ -130,7 +139,7 @@
 
 				if (!node.products)
 					return;
-				
+
 				var product = node.products.find(function(product) {
 					return (product.name == node.product);
 				});
@@ -293,6 +302,18 @@
     <div class="form-row">
         <input type="checkbox" id="node-input-manuallyAck" value="InitialLoad" style="display:inline-block; width: auto; vertical-align: top;">
         <label for="node-input-manuallyAck" style="width: auto"> Manually ACK</label>
+    </div>
+	<div class="form-row">
+        <input type="checkbox" id="node-input-batchMode" value="batchMode" style="display:inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-batchMode" style="width: auto"> Batch Mode</label>
+    </div>
+	<div class="form-row">
+        <label for="node-input-batchSize" style="width: 130px"><i class="fa"></i> BatchSize</label>
+        <input type="text" id="node-input-batchSize" placeholder="1">
+    </div>
+	<div class="form-row">
+        <label for="node-input-timeout" style="width: 130px"><i class="fa"></i> Timeout</label>
+        <input type="text" id="node-input-timeout" placeholder="default">
     </div>
 	<div class="form-row">
         <label for="node-input-delivery" style="width: 130px"><i class="fa fa-play"></i> Delivery Options</label>

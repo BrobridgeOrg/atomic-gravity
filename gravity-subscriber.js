@@ -1,3 +1,5 @@
+// const { setTimeout } = require('timers/promises');
+
 module.exports = function(RED) {
 
     function SubscriberNode(config) {
@@ -73,6 +75,30 @@ module.exports = function(RED) {
 
 		let uuid = require('uuid');
 		let Gravity = require('gravity-sdk');
+		let batchSize;
+		let batchArr =  [];
+		let timerId = null;
+		let timeout = config.timeout;
+		let currentMsgAck = null;
+
+		function setTimer(){
+			if (timerId){
+				clearTimeout(timerId);
+			}
+
+			timerId = setTimeout( ()=>{
+				if (batchArr.length > 0){
+					node.send({payload:batchArr,ack:currentMsgAck.ack});
+				}
+			},timeout*1000)
+		}
+
+		function resetTimer(){
+			if (timerId){
+				clearTimeout(timerId);
+			}
+			setTimer();
+		}
 
 		async function initSubscriber(client) {
 
@@ -88,7 +114,9 @@ module.exports = function(RED) {
 			let product = await client.getProduct(config.product);
 			let subOpts = {
 				seq: Number(config.startseq) || 1,
-				delivery: config.delivery || 'new'
+				delivery: config.delivery || 'new',
+				batchMode: config.batchMode || false,
+				batchSize: config.batchSize || 1,
 			};
 
 			if (config.delivery == 'startSeq') {
@@ -97,14 +125,68 @@ module.exports = function(RED) {
 				node.log(util.format('Initializing subscriber (domain=%s, product=%s, delivery=%s)', client.opts.domain, product.name, subOpts.delivery));
 			}
 
-			let sub = await product.subscribe([], subOpts);
+			if (config.batchMode){
+				batchSize = config.batchSize;
+				node.log(util.format('Batch mode is on, timeout is %d and batch size is %d',timeout,batchSize));
+			}
 
+			let sub = await product.subscribe([], subOpts);
+			var start = performance.now();
+			var count = 0;
 			sub.on('event', (m) => {
+				let subPayload;
+				let msgInfo;
 
 				setStatus('receiving');
 
-				node.send({
-					payload: {
+				if(config.batchMode){
+					subPayload = [];
+					for (const msg of m){
+						msgInfo = {
+							seq: msg.seq,
+							eventName: msg.data.eventName,
+							table: msg.data.table,
+							primaryKeys: msg.data.primaryKeys,
+							primaryKey: msg.data.primaryKey,
+							time: msg.time,
+							timeNano: msg.timeNano,
+							record: msg.data.record,
+							natsMsgId: msg.seq.toString()
+						}
+
+						// let payload = {
+						// 	subPayload:msgInfo,
+						// 	natsMsgId: msg.seq.toString()
+						// }
+
+						subPayload.push(msgInfo);
+					}
+
+					currentMsgAck = {
+						ack:ack.bind(m[m.length-1]),
+					};
+
+					if (subPayload.length >= batchSize){
+						if(timerId){
+							clearTimeout(timerId);
+							timerId = null;
+						}
+						node.send({payload:subPayload,ack:ack.bind(m[m.length-1])});
+						// batchArr = [];
+					}else{
+						batchArr = subPayload;
+						ack.bind(m[m.length-1])();
+					}
+					resetTimer();
+					count+= subPayload.length;
+					if (count==1023573){
+						const end = performance.now();
+						const cost = end - start; // 計算耗時
+    					console.log(`Execution time: ${cost.toFixed(2)} ms`);
+					}
+				}else{
+					console.log(m);
+					subPayload = {
 						seq: m.seq,
 						eventName: m.data.eventName,
 						table: m.data.table,
@@ -113,18 +195,21 @@ module.exports = function(RED) {
 						time: m.time,
 						timeNano: m.timeNano,
 						record: m.data.record,
-					},
-					natsMsgId: m.seq.toString(),
-					ack: ack.bind(m),
-				});
+					}
+					node.send({payload:subPayload,natsMsgId: m.seq.toString(),ack:ack.bind(m)});
+					count++;
+					if (count==1023573){
+						const end = performance.now();
+						const cost = end - start; // 計算耗時
+    					console.log(`Execution time: ${cost.toFixed(2)} ms`);
+					}
+				}
 
-				// Sent acknoledgement automatically
 				if (!config.manuallyAck)
 					ack.bind(m)();
 			});
 
-			node.log(util.format('Subscriber is ready (domain=%s, product=%s, delivery=%s)', client.opts.domain, product.name, subOpts.delivery));
-
+			node.log(util.format('Subscriber is ready (domain=%s, product=%s, delivery=%s, batchMode=%s)', client.opts.domain, product.name, subOpts.delivery,config.batchMode));
 			node.on('close', async () => {
 				node.log(util.format('Closing subscriber (domain=%s, product=%s, delivery=%s)', client.opts.domain, product.name, subOpts.delivery));
 				await sub.unsubscribe();
@@ -132,6 +217,9 @@ module.exports = function(RED) {
 
 			setStatus('connected');
 		}
+
+
+
 
 		if (!node.server) {
 			setStatus('disconnected');

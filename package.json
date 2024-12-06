@@ -21,7 +21,8 @@
     }
   },
   "dependencies": {
-    "gravity-sdk": "^1.0.19",
+    "gravity-sdk": "file:../node-gravity-sdk",
+    "nats": "^2.28.2",
     "uuid": "^8.3.2"
   }
 }
