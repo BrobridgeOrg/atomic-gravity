@@ -131,8 +131,6 @@ module.exports = function(RED) {
 			}
 
 			let sub = await product.subscribe([], subOpts);
-			var start = performance.now();
-			var count = 0;
 			sub.on('event', (m) => {
 				let subPayload;
 				let msgInfo;
@@ -154,11 +152,6 @@ module.exports = function(RED) {
 							natsMsgId: msg.seq.toString()
 						}
 
-						// let payload = {
-						// 	subPayload:msgInfo,
-						// 	natsMsgId: msg.seq.toString()
-						// }
-
 						subPayload.push(msgInfo);
 					}
 
@@ -166,26 +159,14 @@ module.exports = function(RED) {
 						ack:ack.bind(m[m.length-1]),
 					};
 
-					if (subPayload.length >= batchSize){
-						if(timerId){
-							clearTimeout(timerId);
-							timerId = null;
-						}
-						node.send({payload:subPayload,ack:ack.bind(m[m.length-1])});
-						// batchArr = [];
-					}else{
-						batchArr = subPayload;
-						ack.bind(m[m.length-1])();
+					// no matter payload size
+					if(timerId){
+						clearTimeout(timerId);
+						timerId = null;
 					}
+					node.send({payload:subPayload,ack:ack.bind(m[m.length-1])});
 					resetTimer();
-					count+= subPayload.length;
-					if (count==1023573){
-						const end = performance.now();
-						const cost = end - start; // 計算耗時
-    					console.log(`Execution time: ${cost.toFixed(2)} ms`);
-					}
 				}else{
-					console.log(m);
 					subPayload = {
 						seq: m.seq,
 						eventName: m.data.eventName,
@@ -197,12 +178,6 @@ module.exports = function(RED) {
 						record: m.data.record,
 					}
 					node.send({payload:subPayload,natsMsgId: m.seq.toString(),ack:ack.bind(m)});
-					count++;
-					if (count==1023573){
-						const end = performance.now();
-						const cost = end - start; // 計算耗時
-    					console.log(`Execution time: ${cost.toFixed(2)} ms`);
-					}
 				}
 
 				if (!config.manuallyAck)
