@@ -6,20 +6,34 @@
 			name: {
 				value: ""
 			},
+			action: {
+				value: "ack"
+			},
 		},
 		inputs: 1,
 		outputs: 0,
 		icon: 'gravity-icon-white.png',
 		label: function() {
 				return this.name || 'Gravity Acknowledge';
-			}
+			},
+		oneditprepare: function() {
+			console.log(this);
+		}
 	});
 </script>
 
 <script type="text/x-red" data-template-name="Gravity Acknowledge">
-		<div class="form-row">
+	<div class="form-row">
         <label for="node-input-name"><i class="fa fa-stack-exchange"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
+
+	</div>
+	<div class="form-row">
+		<label for="node-input-action" style="width: 130px"><i class="fa fa-reply"></i> Action</label>
+		<select id="node-input-action">
+			<option value="ack">Ack</option>
+			<option value="nak">Negatively Ack</option>
+		</select>
     </div>
 </script>
 
