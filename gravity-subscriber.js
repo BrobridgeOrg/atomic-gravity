@@ -93,7 +93,7 @@ module.exports = function(RED) {
 
 			timerId = setTimeout( ()=>{
 				if (batchArr.length > 0){
-					node.send({payload:batchArr,ack:currentMsgAck.ack});
+					node.send({payload:batchArr,ack:currentMsgAck.ack,nak:currentMsgAck.nak});
 					if (!config.manuallyAck)
 						ack.bind(m[m.length-1])();
 				}
@@ -121,20 +121,27 @@ module.exports = function(RED) {
 						time: msg.time,
 						timeNano: msg.timeNano,
 						record: msg.data.record,
-						natsMsgId: msg.seq.toString()
+						natsMsgId: msg.seq.toString(),
 					}
 
 					subPayload.push(msgInfo);
 				}
 
+				let last = m[m.length-1];
+
 				currentMsgAck = {
-					ack:ack.bind(m[m.length-1]),
-					nak:nak.bind(m[m.length-1])
+					ack:ack.bind(last),
+					nak:nak.bind(last.msg)
 				};
 
-				node.send({payload:subPayload,ack:ack.bind(m[m.length-1]),nak:nak.bind(m[m.length-1])});
+				node.send({
+						payload:subPayload,
+						ack:ack.bind(last),
+						nak:nak.bind(last.msg)
+					});
 				if (!config.manuallyAck)
 					ack.bind(m[m.length-1])();
+				// nak.bind(last.msg)();
 			}else{
 				subPayload = {
 					seq: m.seq,
@@ -146,7 +153,12 @@ module.exports = function(RED) {
 					timeNano: m.timeNano,
 					record: m.data.record,
 				}
-				node.send({payload:subPayload,natsMsgId: m.seq.toString(),ack:ack.bind(m),nak:nak.bind(m[m.length-1])});
+				node.send({
+					payload:subPayload,
+					natsMsgId: m.seq.toString(),
+					ack:ack.bind(m),
+					nak:nak.bind(m)
+				});
 				if (!config.manuallyAck)
 					ack.bind(m)();
 			}
@@ -184,12 +196,9 @@ module.exports = function(RED) {
 
 			let sub = await product.subscribe([], subOpts);
 			sub.on('event', (m) => {
-				// let subPayload;
-				// let msgInfo;
 
 				handleMessage(m);
 				setStatus('receiving');
-
 
 			});
 

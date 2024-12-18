@@ -5,8 +5,7 @@ module.exports = function(RED) {
         var node = this;
 
 		node.on('input', function(msg, send, done) {
-			//node.log('Acknowledging message');
-			if (config.action === 'nak') {
+			if (msg.error && config.action === 'nak') {
 				msg.nak();
 			} else {
 				msg.ack();
