@@ -71,6 +71,11 @@ module.exports = function(RED) {
 			setStatus('connected');
 		}
 
+		function nak() {
+			this.nak();
+			setStatus('connected');
+		}
+
 		setStatus('disconnected');
 
 		let uuid = require('uuid');
@@ -89,6 +94,8 @@ module.exports = function(RED) {
 			timerId = setTimeout( ()=>{
 				if (batchArr.length > 0){
 					node.send({payload:batchArr,ack:currentMsgAck.ack});
+					if (!config.manuallyAck)
+						ack.bind(m[m.length-1])();
 				}
 			},timeout*1000)
 		}
@@ -98,6 +105,51 @@ module.exports = function(RED) {
 				clearTimeout(timerId);
 			}
 			setTimer();
+		}
+
+
+		function handleMessage(m){
+			if(config.batchMode){
+				subPayload = [];
+				for (const msg of m){
+					msgInfo = {
+						seq: msg.seq,
+						eventName: msg.data.eventName,
+						table: msg.data.table,
+						primaryKeys: msg.data.primaryKeys,
+						primaryKey: msg.data.primaryKey,
+						time: msg.time,
+						timeNano: msg.timeNano,
+						record: msg.data.record,
+						natsMsgId: msg.seq.toString()
+					}
+
+					subPayload.push(msgInfo);
+				}
+
+				currentMsgAck = {
+					ack:ack.bind(m[m.length-1]),
+					nak:nak.bind(m[m.length-1])
+				};
+
+				node.send({payload:subPayload,ack:ack.bind(m[m.length-1]),nak:nak.bind(m[m.length-1])});
+				if (!config.manuallyAck)
+					ack.bind(m[m.length-1])();
+			}else{
+				subPayload = {
+					seq: m.seq,
+					eventName: m.data.eventName,
+					table: m.data.table,
+					primaryKeys: m.data.primaryKeys,
+					primaryKey: m.data.primaryKey,
+					time: m.time,
+					timeNano: m.timeNano,
+					record: m.data.record,
+				}
+				node.send({payload:subPayload,natsMsgId: m.seq.toString(),ack:ack.bind(m),nak:nak.bind(m[m.length-1])});
+				if (!config.manuallyAck)
+					ack.bind(m)();
+			}
 		}
 
 		async function initSubscriber(client) {
@@ -132,61 +184,19 @@ module.exports = function(RED) {
 
 			let sub = await product.subscribe([], subOpts);
 			sub.on('event', (m) => {
-				let subPayload;
-				let msgInfo;
+				// let subPayload;
+				// let msgInfo;
 
+				handleMessage(m);
 				setStatus('receiving');
 
-				if(config.batchMode){
-					subPayload = [];
-					for (const msg of m){
-						msgInfo = {
-							seq: msg.seq,
-							eventName: msg.data.eventName,
-							table: msg.data.table,
-							primaryKeys: msg.data.primaryKeys,
-							primaryKey: msg.data.primaryKey,
-							time: msg.time,
-							timeNano: msg.timeNano,
-							record: msg.data.record,
-							natsMsgId: msg.seq.toString()
-						}
 
-						subPayload.push(msgInfo);
-					}
-
-					currentMsgAck = {
-						ack:ack.bind(m[m.length-1]),
-					};
-
-					// no matter payload size
-					if(timerId){
-						clearTimeout(timerId);
-						timerId = null;
-					}
-					node.send({payload:subPayload,ack:ack.bind(m[m.length-1])});
-					resetTimer();
-				}else{
-					subPayload = {
-						seq: m.seq,
-						eventName: m.data.eventName,
-						table: m.data.table,
-						primaryKeys: m.data.primaryKeys,
-						primaryKey: m.data.primaryKey,
-						time: m.time,
-						timeNano: m.timeNano,
-						record: m.data.record,
-					}
-					node.send({payload:subPayload,natsMsgId: m.seq.toString(),ack:ack.bind(m)});
-				}
-
-				if (!config.manuallyAck)
-					ack.bind(m)();
 			});
 
 			node.log(util.format('Subscriber is ready (domain=%s, product=%s, delivery=%s, batchMode=%s)', client.opts.domain, product.name, subOpts.delivery,config.batchMode));
 			node.on('close', async () => {
 				node.log(util.format('Closing subscriber (domain=%s, product=%s, delivery=%s)', client.opts.domain, product.name, subOpts.delivery));
+				await new Promise((resolve)=>setTimeout(resolve,200));
 				await sub.unsubscribe();
 			});
 
