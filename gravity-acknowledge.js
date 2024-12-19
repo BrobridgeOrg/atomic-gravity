@@ -7,7 +7,7 @@ module.exports = function(RED) {
 		node.on('input', function(msg, send, done) {
 			if (msg.error && config.action === 'nak') {
 				msg.nak();
-			} else {
+			} else if(!msg.error && config.action === 'ack'){
 				msg.ack();
 			}
 
