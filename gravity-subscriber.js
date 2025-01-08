@@ -80,7 +80,7 @@ module.exports = function(RED) {
 
 		let uuid = require('uuid');
 		let Gravity = require('gravity-sdk');
-		let batchSize;
+		const batchSize = 1000;
 		let batchArr =  [];
 		let timerId = null;
 		let timeout = config.timeout;
@@ -107,7 +107,6 @@ module.exports = function(RED) {
 			setTimer();
 		}
 
-
 		function handleMessage(m){
 			if(config.batchMode){
 				subPayload = [];
@@ -125,23 +124,39 @@ module.exports = function(RED) {
 					}
 
 					subPayload.push(msgInfo);
+					// console.log("subscriber:",msg.seq);
+					// console.log(msg.msg.info);
 				}
 
 				let last = m[m.length-1];
-
+				// last.msg.nak();
+				// console.log(last.msg.di);
 				currentMsgAck = {
 					ack:ack.bind(last),
-					nak:nak.bind(last.msg)
+					nak:nak.bind(last)
 				};
 
-				node.send({
+				if (subPayload.length >= batchSize){
+					if(timerId){
+						clearTimeout(timerId);
+						timerId = null;
+					}
+
+					node.send({
 						payload:subPayload,
 						ack:ack.bind(last),
-						nak:nak.bind(last.msg)
+						nak:nak.bind(last)
 					});
+
+				}else{
+					batchArr = subPayload;
+					ack.bind(m[m.length-1])();
+				}
+
+				resetTimer();
+
 				if (!config.manuallyAck)
 					ack.bind(m[m.length-1])();
-				// nak.bind(last.msg)();
 			}else{
 				subPayload = {
 					seq: m.seq,
@@ -180,7 +195,7 @@ module.exports = function(RED) {
 				seq: Number(config.startseq) || 1,
 				delivery: config.delivery || 'new',
 				batchMode: config.batchMode || false,
-				batchSize: config.batchSize || 1,
+				batchSize: batchSize
 			};
 
 			if (config.delivery == 'startSeq') {
@@ -190,7 +205,7 @@ module.exports = function(RED) {
 			}
 
 			if (config.batchMode){
-				batchSize = config.batchSize;
+				// batchSize = config.batchSize;
 				node.log(util.format('Batch mode is on, timeout is %d and batch size is %d',timeout,batchSize));
 			}
 
@@ -199,6 +214,7 @@ module.exports = function(RED) {
 
 				handleMessage(m);
 				setStatus('receiving');
+
 
 			});
 
